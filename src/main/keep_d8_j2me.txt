@@ -42,3 +42,5 @@
 }
 -keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature,Exceptions
 -dontobfuscate
+# Explain any remaining R8 launcher reachability during bootstrap shrink.
+-whyareyoukeeping class com.android.tools.r8.R8

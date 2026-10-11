@@ -38,10 +38,7 @@ jobs:
           echo "$RUNNER_TEMP/depot_tools" >> "$GITHUB_PATH"
       - name: Build slim D8 from source
         run: python3 tools/gradle.py --no-internal -q :dist:assembleD8J2ME
-      - name: Validate legacy conversion and absence of R8 CLI
-        run: python3 tools/j2me/verify_d8_j2me.py build/libs/d8-j2me.jar
-      - name: Publish evaluation artifact
-        if: success()
+      - name: Upload compiler for independent testing
         uses: actions/upload-artifact@v4
         with:
           name: d8-j2me-bootstrap
@@ -49,3 +46,5 @@ jobs:
             build/libs/d8-j2me.jar
             build/libs/d8-j2me.jar.map
           retention-days: 7
+      - name: Validate legacy conversion and absence of R8 CLI
+        run: python3 tools/j2me/verify_d8_j2me.py build/libs/d8-j2me.jar

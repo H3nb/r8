@@ -21,14 +21,15 @@ def verify_archive(jar):
         required = "com/android/tools/r8/D8.class"
         if required not in files:
             raise AssertionError(f"Missing D8 entry point: {required}")
-        for excluded in (
-            "com/android/tools/r8/R8.class",
-            "com/android/tools/r8/compatproguard/CompatProguard.class",
-        ):
-            if excluded in files:
-                raise AssertionError(f"R8-only entry point remains: {excluded}")
+        unexpected = [
+            excluded for excluded in (
+                "com/android/tools/r8/R8.class",
+                "com/android/tools/r8/compatproguard/CompatProguard.class",
+            ) if excluded in files
+        ]
         if "LICENSE" not in files:
             raise AssertionError("Bundled dependency license is missing")
+        return unexpected
 
 
 def make_fixture(root):
@@ -111,7 +112,7 @@ def main():
     parser.add_argument("compiler", type=Path)
     args = parser.parse_args()
     compiler = args.compiler.resolve()
-    verify_archive(compiler)
+    retained_launchers = verify_archive(compiler)
     result = subprocess.run(
         ["java", "-cp", str(compiler), "com.android.tools.r8.D8", "--version"],
         check=True, capture_output=True, text=True,
@@ -120,6 +121,8 @@ def main():
         raise AssertionError(f"Unexpected D8 version: {result.stdout} {result.stderr}")
     with tempfile.TemporaryDirectory(prefix="d8-j2me-smoke-") as temp:
         verify_conversion(compiler, Path(temp))
+    if retained_launchers:
+        raise AssertionError("R8-only entry points remain: " + ", ".join(retained_launchers))
     print("D8-J2ME: D8 CLI and in-memory API compiled mixed legacy bytecode successfully")
 
 
