@@ -21,14 +21,16 @@ mixed Java 1.1/Java 8 synthetic JAR (including multi-dimensional arrays,
 synchronization, and a non-ZIP resource named `.jar`).
 
 This first artifact is **not ready for JL-Mod Plus integration**.
-Host-JVM tests have validated CLI and in-memory D8 conversion, and a locally
-constructed classfile with CLDC `StackMap` attributes. Raw, untransformed JARs
-from a 65-game J2ME sample corpus produced DEX successfully: 2,174 input class
-definitions and 2,174 DEX class definitions, with valid DEX checksums and SHA-1
-signatures. The measurements are *not* Android runtime or MIDlet compatibility
-results. The Android API 23 execution test, post-ASM transformed inputs, and
-memory/performance comparison with DX remain outstanding. No original game
-files are stored in this repository.
+Host-JVM tests have validated the CLI and in-memory D8 API. All 65 raw
+J2ME sample JARs (2,174 classes) produced valid DEX with both routes, with
+matching class-definition counts, Adler-32 checksums, and SHA-1 signatures.
+The source-built API-only library was also loaded by a small Android app
+with NIO core-library desugaring: the Android 6 (API 23) emulator successfully
+converted a Java 8 class through the in-memory API (281 ms in one smoke run).
+This establishes a working Android 6 packaging path, **not** whole-game runtime
+compatibility. The ASM-transformed inputs, memory/performance comparison with
+DX, and device gameplay remain outstanding. No original game files are stored
+in this repository.
 
 ## Exit criteria before replacing DX
 
@@ -74,6 +76,23 @@ resolve the issue. This is a deliberately strict, **unadapted**
 compiler-runtime baseline, not a final judgment on a correctly
 desugared and packaged Android integration.
 
-Follow-up: build a programmatic-only variant, audit its retained Java
-library references, and validate an Android-compatible desugared
-packaging strategy before raising minSdk or replacing DX.
+A programmatic-only variant has now passed the Android 6 smoke test when
+built into an APK with `desugar_jdk_libs_nio:2.1.5`. The older `app_process`
+failure is retained here as a warning against packaging without desugaring.
+
+
+### Reproducing the API-only game corpus test
+
+The compiler API tests accept transformed or original class bytes in memory.
+For JAR corpus checks on a host JDK, the library provider reads
+`java.base.jmod` instead of passing a filesystem path into D8:
+
+```sh
+javac -cp build/libs/d8-j2me-api.jar -d build/j2me-tests tools/j2me/D8MemoryCorpus.java
+java -cp "build/libs/d8-j2me-api.jar:build/j2me-tests" D8MemoryCorpus \
+  "$JAVA_HOME/jmods/java.base.jmod" /path/to/game.jar
+```
+
+The host-JDK library provider is a test fixture, not the Android library
+provider that JL-Mod Plus will use. Java classfile references missing from
+that fixture are diagnostic warnings, not proof of a runtime defect.

@@ -22,6 +22,9 @@ def main():
     jar = Path(sys.argv[1]).resolve()
     with ZipFile(jar) as archive:
         classes = set(archive.namelist())
+        manifest = archive.read("META-INF/MANIFEST.MF").decode("utf-8")
+    if "Main-Class:" in manifest:
+        raise AssertionError("API-only JAR must not advertise a CLI main method")
     required = (
         "com/android/tools/r8/D8.class",
         "com/android/tools/r8/ClassFileResourceProvider.class",
@@ -35,7 +38,7 @@ def main():
             raise AssertionError("R8 launcher retained in API artifact")
     with tempfile.TemporaryDirectory(prefix="d8-j2me-api-") as location:
         root = Path(location)
-        make_fixture(root)
+        fixture = make_fixture(root)
         compiled = root / "smoke"
         compiled.mkdir()
         source = Path(__file__).with_name("D8MemoryLibrarySmoke.java")
@@ -45,6 +48,13 @@ def main():
             "D8MemoryLibrarySmoke",
             str(root / "classes" / "sample" / "Legacy.class"),
             str(root / "classes" / "sample" / "Modern.class"),
+        )
+        jmod = Path(os.environ["JAVA_HOME"]) / "jmods/java.base.jmod"
+        corpus_source = Path(__file__).with_name("D8MemoryCorpus.java")
+        run("javac", "-cp", str(jar), "-d", str(compiled), str(corpus_source))
+        run(
+            "java", "-cp", os.pathsep.join((str(jar), str(compiled))),
+            "D8MemoryCorpus", str(jmod), str(fixture),
         )
     print(f"Validated in-memory D8 artifact: {jar.stat().st_size} bytes")
 

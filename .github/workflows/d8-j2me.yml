@@ -15,6 +15,7 @@ on:
       - tools/j2me/verify_d8_j2me.py
       - tools/j2me/verify_d8_j2me_api.py
       - tools/j2me/D8MemoryLibrarySmoke.java
+      - tools/j2me/D8MemoryCorpus.java
       - tools/j2me/audit_android_apis.py
   workflow_dispatch:
 
