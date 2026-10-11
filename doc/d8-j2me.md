@@ -55,3 +55,25 @@ python3 tools/j2me/run_corpus.py build/libs/d8-j2me.jar /path/to/J2ME-jars --lib
 
 Keep copyrighted JARs outside the repository. Successful host-JVM conversion
 does not establish Android API 23 runtime compatibility or MIDlet execution.
+
+## Android 6 feasibility finding
+
+The unmodified source-built D8 compiler was dexed on the host with
+`--min-api 23` and executed with `app_process` on an Android 6 x86_64
+emulator. Host-side conversion succeeded, but the Android process could
+not initialize the compiler:
+
+```
+java.lang.NoClassDefFoundError: com.android.tools.r8.BaseCompilerCommand$Builder$1
+```
+
+The host dexer also warned about unavailable API 23 Java library types,
+including `java.util.function`, `java.util.Spliterator`, and
+`java.util.PrimitiveIterator`. Increasing emulator RAM/heap did not
+resolve the issue. This is a deliberately strict, **unadapted**
+compiler-runtime baseline, not a final judgment on a correctly
+desugared and packaged Android integration.
+
+Follow-up: build a programmatic-only variant, audit its retained Java
+library references, and validate an Android-compatible desugared
+packaging strategy before raising minSdk or replacing DX.
