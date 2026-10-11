@@ -8,10 +8,29 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import struct
 import subprocess
+import zlib
 import tempfile
 import time
 from zipfile import BadZipFile, ZipFile
+
+
+def dex_class_count(data):
+    if len(data) < 112 or not data.startswith(b"dex\n"):
+        raise ValueError("Invalid DEX header")
+    file_size, header_size, endian_tag = struct.unpack_from("<III", data, 32)
+    if file_size != len(data) or header_size != 112 or endian_tag != 0x12345678:
+        raise ValueError("Inconsistent DEX header")
+    checksum = struct.unpack_from("<I", data, 8)[0]
+    if checksum != (zlib.adler32(data[12:]) & 0xffffffff):
+        raise ValueError("Invalid DEX Adler-32 checksum")
+    if data[12:32] != hashlib.sha1(data[32:]).digest():
+        raise ValueError("Invalid DEX SHA-1 signature")
+    class_count, class_offset = struct.unpack_from("<II", data, 96)
+    if class_offset + class_count * 32 > len(data):
+        raise ValueError("DEX class definitions exceed file size")
+    return class_count
 
 
 DEX_NAME = re.compile(r"classes(?:[2-9][0-9]*|1[0-9]+)?\.dex\Z")
@@ -24,6 +43,7 @@ def test_jar(compiler, library, jar, timeout, heap_mb):
         "jar_bytes": jar.stat().st_size,
         "status": "failed",
         "dex_count": 0,
+        "dex_classes": 0,
         "dex_bytes": 0,
         "seconds": 0,
         "detail": "",
@@ -31,7 +51,7 @@ def test_jar(compiler, library, jar, timeout, heap_mb):
     try:
         with ZipFile(jar) as archive:
             classes = [name for name in archive.namelist() if name.endswith(".class")]
-        record["classes"] = len(classes)
+        record["classes"] = len(set(classes))
         if not classes:
             record["status"] = "no_classes"
             return record
@@ -70,12 +90,14 @@ def test_jar(compiler, library, jar, timeout, heap_mb):
                     return record
                 for name in dex_names:
                     data = archive.read(name)
-                    if len(data) < 0x70 or not data.startswith(b"dex\n"):
-                        record["status"] = "invalid_dex"
-                        return record
+                    record["dex_classes"] += dex_class_count(data)
                     record["dex_bytes"] += len(data)
                 record["dex_count"] = len(dex_names)
-        except (OSError, BadZipFile) as error:
+                if record["dex_classes"] < record["classes"]:
+                    record["status"] = "missing_classes"
+                    record["detail"] = "Fewer class definitions than input classes"
+                    return record
+        except (OSError, BadZipFile, ValueError) as error:
             record["status"] = "invalid_output"
             record["detail"] = str(error)[:300]
             return record
@@ -111,7 +133,7 @@ def main():
         )
     fields = [
         "file", "sha256", "jar_bytes", "classes", "status",
-        "dex_count", "dex_bytes", "seconds", "detail",
+        "dex_count", "dex_classes", "dex_bytes", "seconds", "detail",
     ]
     with args.output.open("w", newline="", encoding="utf-8") as output:
         writer = csv.DictWriter(output, fieldnames=fields)
