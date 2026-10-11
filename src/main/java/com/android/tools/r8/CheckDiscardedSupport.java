@@ -77,4 +77,4 @@ final class CheckDiscardedSupport {
             .build());
     options.reporter.failIfPendingErrors();
   }
-
+}
