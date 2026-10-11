@@ -12,7 +12,7 @@ python3 tools/j2me/verify_d8_j2me.py build/libs/d8-j2me.jar
 ```
 
 The new target uses the existing upstream compiler build and bootstrap
-optimizer, rooted at the D8 **command-line** entry point. It removes
+optimizer, rooted at D8 command-line and in-memory conversion entry points. A custom\ninput-JAR manifest prevents the SwissArmyKnife launcher from retaining R8. It removes
 unreachable R8-only functionality from the delivered artifact without
 deleting shared source prematurely. The initial smoke checks the D8 version,
 the absence of the R8 and CompatProguard entry points, and conversion of a
@@ -39,3 +39,13 @@ not yet passed qualification. No user game files are stored in this repository.
    tests. Keep shared D8/R8 internals until no longer needed.
 
 The root BSD-3-Clause LICENSE and inherited upstream notices remain intact.
+
+
+Run the local corpus harness after obtaining a source-built artifact:
+
+```sh
+python3 tools/j2me/run_corpus.py build/libs/d8-j2me.jar /path/to/J2ME-jars --lib "$JAVA_HOME"
+```
+
+Keep copyrighted JARs outside the repository. Successful host-JVM conversion
+does not establish Android API 23 runtime compatibility or MIDlet execution.

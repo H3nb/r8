@@ -385,11 +385,23 @@ tasks {
   }
 }
 
-// D8-only bootstrap artifact. Keep the upstream compiler build intact while
-// shrinking away entry points and implementations exclusive to R8.
+// Bootstrap D8 from the original relocated compiler without inheriting its
+// SwissArmyKnife manifest entry point (which also keeps R8 reachable).
+val relocatedCompiler = tasks.named<SwissArmyKnifeTask>("r8WithRelocatedDeps")
+val d8InputJar = tasks.register<Jar>("d8J2MEInputJar") {
+  dependsOn(relocatedCompiler)
+  from(Callable { zipTree(relocatedCompiler.get().outputFile.get().asFile) }) {
+    exclude("META-INF/MANIFEST.MF")
+  }
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  manifest { attributes["Main-Class"] = "com.android.tools.r8.D8" }
+  archiveFileName.set("d8-j2me-input.jar")
+  destinationDirectory.set(File(rootDir, "build/libs"))
+}
+
 tasks.register<CreateR8LibraryTask>("assembleD8J2ME") {
-  r8compilerClasspath.from(tasks.named<SwissArmyKnifeTask>("r8WithRelocatedDeps").flatMap { it.outputFile })
-  inputJar = tasks.named<SwissArmyKnifeTask>("r8WithRelocatedDeps").flatMap { it.outputFile }
+  r8compilerClasspath.from(relocatedCompiler.flatMap { it.outputFile })
+  inputJar = d8InputJar.flatMap { it.archiveFile }
   pgConfigs.from(
     File(rootDir, "src/main/keep_d8_j2me.txt"),
     File(rootDir, "src/main/dontwarn.txt"),

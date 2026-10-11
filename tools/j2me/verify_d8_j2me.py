@@ -82,6 +82,17 @@ def verify_conversion(compiler, root):
         "--output", str(output),
         str(fixture),
     )
+    api_classes = root / "api-classes"
+    api_classes.mkdir()
+    api_source = Path(__file__).with_name("D8ProgrammaticSmoke.java")
+    run("javac", "-cp", str(compiler), "-d", str(api_classes), str(api_source))
+    run(
+        "java", "-cp", os.pathsep.join((str(compiler), str(api_classes))),
+        "D8ProgrammaticSmoke",
+        str(root / "classes" / "sample" / "Legacy.class"),
+        str(root / "classes" / "sample" / "Modern.class"),
+        str(java_home),
+    )
     with ZipFile(output) as archive:
         names = archive.namelist()
         dex_files = [name for name in names if re.fullmatch(r"classes[0-9]*\.dex", name)]
@@ -109,7 +120,7 @@ def main():
         raise AssertionError(f"Unexpected D8 version: {result.stdout} {result.stderr}")
     with tempfile.TemporaryDirectory(prefix="d8-j2me-smoke-") as temp:
         verify_conversion(compiler, Path(temp))
-    print("D8-J2ME bootstrap: retained D8, removed R8 CLI, mixed legacy DEX smoke passed")
+    print("D8-J2ME: D8 CLI and in-memory API compiled mixed legacy bytecode successfully")
 
 
 if __name__ == "__main__":

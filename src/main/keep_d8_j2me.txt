@@ -1,17 +1,44 @@
-# D8-J2ME bootstrap: keep only the CLI contract required by the first
-# source-built feasibility test. The programmatic conversion API will be
-# explicitly preserved and tested before integration into JL-Mod Plus.
+# Retain D8 entry points, the in-memory J2ME conversion API and threading
+# providers accessed reflectively. Do not keep the SwissArmyKnife or R8 launchers.
 -keep public class com.android.tools.r8.D8 {
   public static void main(java.lang.String[]);
+  public static void run(com.android.tools.r8.D8Command);
 }
+-keep public class com.android.tools.r8.D8Command {
+  public static com.android.tools.r8.D8Command$Builder builder();
+}
+-keep class com.android.tools.r8.D8Command$Builder
+-keep class com.android.tools.r8.BaseCommand$Builder {
+  public *** build();
+  public *** addClassProgramData(byte[], com.android.tools.r8.origin.Origin);
+  public *** addLibraryFiles(java.nio.file.Path[]);
+}
+-keep class com.android.tools.r8.BaseCompilerCommand$Builder {
+  public *** setProgramConsumer(com.android.tools.r8.ProgramConsumer);
+  public *** setMinApiLevel(int);
+  public *** setMode(com.android.tools.r8.CompilationMode);
+}
+-keep interface com.android.tools.r8.DexIndexedConsumer {
+  public void accept(int, com.android.tools.r8.ByteDataView, java.util.Set, com.android.tools.r8.DiagnosticsHandler);
+}
+-keep interface com.android.tools.r8.ProgramConsumer {
+  public void finished(com.android.tools.r8.DiagnosticsHandler);
+}
+-keep class com.android.tools.r8.ByteDataView {
+  public byte[] copyByteData();
+}
+-keep interface com.android.tools.r8.DiagnosticsHandler
+-keep class com.android.tools.r8.origin.Origin {
+  public static com.android.tools.r8.origin.Origin unknown();
+}
+-keep enum com.android.tools.r8.CompilationMode { *; }
 -keep public class com.android.tools.r8.Version {
   public static final java.lang.String LABEL;
 }
--keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature,Exceptions
-# The upstream threading module loader uses Class.forName, not a static
-# reference. Keep the default provider and its constructor exactly named.
+# ThreadingModule.Loader discovers this class through Class.forName.
 -keep class com.android.tools.r8.threading.providers.blocking.ThreadingModuleBlockingProvider {
   public <init>();
   public *;
 }
+-keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature,Exceptions
 -dontobfuscate
