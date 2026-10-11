@@ -12,7 +12,8 @@ python3 tools/j2me/verify_d8_j2me.py build/libs/d8-j2me.jar
 ```
 
 The new target uses the existing upstream compiler build and bootstrap
-optimizer, rooted at D8 command-line and in-memory conversion entry points. A custom\ninput-JAR manifest prevents the SwissArmyKnife launcher from retaining R8. It removes
+optimizer, rooted at D8 command-line and in-memory conversion entry points. A custom
+input-JAR manifest prevents the SwissArmyKnife launcher from retaining R8. It removes
 unreachable R8-only functionality from the delivered artifact without
 deleting shared source prematurely. The initial smoke checks the D8 version,
 the absence of the R8 and CompatProguard entry points, and conversion of a
