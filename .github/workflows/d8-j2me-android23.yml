@@ -35,6 +35,9 @@ jobs:
           run-id: ${{ inputs.artifact_run_id || '38140355258' }}
           github-token: ${{ github.token }}
           path: build/libs
+      - name: Permit emulator hardware acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
       - name: Android API 23 compiler execution
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -42,7 +45,7 @@ jobs:
           target: google_apis
           arch: x86_64
           script: |
-            set -euo pipefail
+            set -eu
             android_jar="$ANDROID_HOME/platforms/android-23/android.jar"
             test -f "$android_jar"
             mkdir -p "$RUNNER_TEMP/fixture/classes"
