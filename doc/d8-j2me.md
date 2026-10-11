@@ -21,9 +21,14 @@ mixed Java 1.1/Java 8 synthetic JAR (including multi-dimensional arrays,
 synchronization, and a non-ZIP resource named `.jar`).
 
 This first artifact is **not ready for JL-Mod Plus integration**.
-In particular, the public programmatic D8 API, CLDC `StackMap` inputs,
-Android API 23 runtime/linkage, memory usage, and the real-game corpus have
-not yet passed qualification. No user game files are stored in this repository.
+Host-JVM tests have validated CLI and in-memory D8 conversion, and a locally
+constructed classfile with CLDC `StackMap` attributes. Raw, untransformed JARs
+from a 65-game J2ME sample corpus produced DEX successfully: 2,174 input class
+definitions and 2,174 DEX class definitions, with valid DEX checksums and SHA-1
+signatures. The measurements are *not* Android runtime or MIDlet compatibility
+results. The Android API 23 execution test, post-ASM transformed inputs, and
+memory/performance comparison with DX remain outstanding. No original game
+files are stored in this repository.
 
 ## Exit criteria before replacing DX
 
