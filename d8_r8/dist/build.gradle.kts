@@ -384,3 +384,48 @@ tasks {
     setOutputJarFile(File(rootDir, "build/libs/processkeepruleslib.jar"))
   }
 }
+
+// Bootstrap D8 from the original relocated compiler without inheriting its
+// SwissArmyKnife manifest entry point (which also keeps R8 reachable).
+val relocatedCompiler = tasks.named<SwissArmyKnifeTask>("r8WithRelocatedDeps")
+val d8InputJar = tasks.register<Jar>("d8J2MEInputJar") {
+  dependsOn(relocatedCompiler)
+  from(Callable { zipTree(relocatedCompiler.get().outputFile.get().asFile) }) {
+    exclude("META-INF/MANIFEST.MF")
+  }
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  manifest { attributes["Main-Class"] = "com.android.tools.r8.D8" }
+  archiveFileName.set("d8-j2me-input.jar")
+  destinationDirectory.set(File(rootDir, "build/libs"))
+}
+
+tasks.register<CreateR8LibraryTask>("assembleD8J2ME") {
+  r8compilerClasspath.from(relocatedCompiler.flatMap { it.outputFile })
+  inputJar = d8InputJar.flatMap { it.archiveFile }
+  pgConfigs.from(
+    File(rootDir, "src/main/keep_d8_j2me.txt"),
+    File(rootDir, "src/main/dontwarn.txt"),
+  )
+  setOutputJarFile(File(rootDir, "build/libs/d8-j2me.jar"))
+}
+
+// The API artifact has no command-line entry point and no Main-Class manifest.
+val d8ApiInputJar = tasks.register<Jar>("d8J2MEApiInputJar") {
+  dependsOn(relocatedCompiler)
+  from(Callable { zipTree(relocatedCompiler.get().outputFile.get().asFile) }) {
+    exclude("META-INF/MANIFEST.MF")
+  }
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  archiveFileName.set("d8-j2me-api-input.jar")
+  destinationDirectory.set(File(rootDir, "build/libs"))
+}
+
+tasks.register<CreateR8LibraryTask>("assembleD8J2MEApi") {
+  r8compilerClasspath.from(relocatedCompiler.flatMap { it.outputFile })
+  inputJar = d8ApiInputJar.flatMap { it.archiveFile }
+  pgConfigs.from(
+    File(rootDir, "src/main/keep_d8_j2me_api.txt"),
+    File(rootDir, "src/main/dontwarn.txt"),
+  )
+  setOutputJarFile(File(rootDir, "build/libs/d8-j2me-api.jar"))
+}

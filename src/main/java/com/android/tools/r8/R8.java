@@ -14,7 +14,6 @@ import com.android.tools.r8.dex.ApplicationReader;
 import com.android.tools.r8.dex.ApplicationWriter;
 import com.android.tools.r8.dex.Marker;
 import com.android.tools.r8.diagnostic.R8VersionDiagnostic;
-import com.android.tools.r8.errors.CheckDiscardDiagnostic;
 import com.android.tools.r8.errors.KotlinMetadataDiscardedDiagnostic;
 import com.android.tools.r8.experimental.graphinfo.GraphConsumer;
 import com.android.tools.r8.graph.AppInfoWithClassHierarchy;
@@ -25,13 +24,11 @@ import com.android.tools.r8.graph.DexApplicationReadFlags;
 import com.android.tools.r8.graph.DexClass;
 import com.android.tools.r8.graph.DexEncodedMethod;
 import com.android.tools.r8.graph.DexProgramClass;
-import com.android.tools.r8.graph.DexReference;
 import com.android.tools.r8.graph.DexType;
 import com.android.tools.r8.graph.DirectMappedDexApplication;
 import com.android.tools.r8.graph.GenericSignatureContextBuilder;
 import com.android.tools.r8.graph.GenericSignatureCorrectnessHelper;
 import com.android.tools.r8.graph.ImmediateAppSubtypingInfo;
-import com.android.tools.r8.graph.ProgramDefinition;
 import com.android.tools.r8.graph.PrunedItems;
 import com.android.tools.r8.horizontalclassmerging.HorizontalClassMerger;
 import com.android.tools.r8.inspector.internal.InspectorImpl;
@@ -95,7 +92,6 @@ import com.android.tools.r8.shaking.AnnotationRemover;
 import com.android.tools.r8.shaking.AppInfoWithLiveness;
 import com.android.tools.r8.shaking.ClassInitFieldSynthesizer;
 import com.android.tools.r8.shaking.DefaultTreePrunerConfiguration;
-import com.android.tools.r8.shaking.DiscardedChecker;
 import com.android.tools.r8.shaking.Enqueuer;
 import com.android.tools.r8.shaking.Enqueuer.Mode;
 import com.android.tools.r8.shaking.EnqueuerFactory;
@@ -1220,43 +1216,8 @@ public class R8 {
       Timing timing,
       ExecutorService executorService)
       throws ExecutionException {
-    if (whyAreYouKeepingConsumer != null) {
-      for (DexReference reference : rootSet.reasonAsked) {
-        whyAreYouKeepingConsumer.printWhyAreYouKeeping(
-            enqueuer.getGraphReporter().getGraphNode(reference), System.out);
-      }
-    }
-    DiscardedChecker discardedChecker =
-        forMainDex ? DiscardedChecker.createForMainDex(appView) : DiscardedChecker.create(appView);
-    List<ProgramDefinition> failed = discardedChecker.run(classes.get(), executorService);
-    if (appView.options().testing.dontReportFailingCheckDiscarded) {
-      assert !failed.isEmpty();
-      return;
-    }
-    if (failed.isEmpty()) {
-      return;
-    }
-    // If there is no kept-graph info, re-run the enqueueing to compute it.
-    if (whyAreYouKeepingConsumer == null) {
-      whyAreYouKeepingConsumer = new WhyAreYouKeepingConsumer(null);
-      ImmediateAppSubtypingInfo subtypingInfo = ImmediateAppSubtypingInfo.create(appView);
-      if (forMainDex) {
-        enqueuer =
-            EnqueuerFactory.createForFinalMainDexTracing(
-                appView, executorService, subtypingInfo, whyAreYouKeepingConsumer);
-        enqueuer.traceMainDex(executorService, timing);
-      } else {
-        enqueuer =
-            EnqueuerFactory.createForWhyAreYouKeeping(
-                appView, executorService, subtypingInfo, whyAreYouKeepingConsumer);
-        enqueuer.traceApplication(rootSet, executorService, timing);
-      }
-    }
-    options.reporter.error(
-        new CheckDiscardDiagnostic.Builder()
-            .addFailedItems(failed, enqueuer.getGraphReporter(), whyAreYouKeepingConsumer)
-            .build());
-    options.reporter.failIfPendingErrors();
+    CheckDiscardedSupport.processWhyAreYouKeepingAndCheckDiscarded(
+        rootSet, classes, whyAreYouKeepingConsumer, appView, enqueuer, forMainDex, options, timing, executorService);
   }
 
   private static void processCheckKotlinMetadataDiscarded(

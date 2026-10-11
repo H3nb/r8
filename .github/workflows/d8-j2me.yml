@@ -1,0 +1,58 @@
+name: D8-J2ME bootstrap
+
+on:
+  push:
+    branches:
+      - work/d8-j2me-bootstrap
+    paths:
+      - .github/workflows/d8-j2me.yml
+      - d8_r8/dist/build.gradle.kts
+      - src/main/keep_d8_j2me.txt
+      - src/main/keep_d8_j2me_api.txt
+      - src/main/java/com/android/tools/r8/CheckDiscardedSupport.java
+      - src/main/java/com/android/tools/r8/GenerateMainDexList.java
+      - src/main/java/com/android/tools/r8/R8.java
+      - tools/j2me/verify_d8_j2me.py
+      - tools/j2me/verify_d8_j2me_api.py
+      - tools/j2me/D8MemoryLibrarySmoke.java
+      - tools/j2me/D8MemoryCorpus.java
+      - tools/j2me/audit_android_apis.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Install Chromium depot_tools
+        run: |
+          git clone --depth 1 https://chromium.googlesource.com/chromium/tools/depot_tools.git "$RUNNER_TEMP/depot_tools"
+          echo "$RUNNER_TEMP/depot_tools" >> "$GITHUB_PATH"
+      - name: Build slim D8 from source
+        run: python3 tools/gradle.py --no-internal -q :dist:assembleD8J2ME :dist:assembleD8J2MEApi
+      - name: Audit Java runtime references
+        run: python3 tools/j2me/audit_android_apis.py build/libs/d8-j2me-api.jar --output build/libs/android-runtime-refs.json
+      - name: Upload compiler for independent testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: d8-j2me-bootstrap
+          path: |
+            build/libs/d8-j2me.jar
+            build/libs/d8-j2me-api.jar
+            build/libs/d8-j2me.jar.map
+            build/libs/d8-j2me-api.jar.map
+            build/libs/android-runtime-refs.json
+          retention-days: 7
+      - name: Validate legacy conversion and absence of R8 CLI
+        run: |
+          python3 tools/j2me/verify_d8_j2me.py build/libs/d8-j2me.jar
+          python3 tools/j2me/verify_d8_j2me_api.py build/libs/d8-j2me-api.jar
+          ls -lh build/libs/d8-j2me*.jar

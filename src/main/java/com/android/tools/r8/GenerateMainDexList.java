@@ -94,7 +94,7 @@ public class GenerateMainDexList {
         EnqueuerFactory.createForGenerateMainDexList(
             appView, executor, subtypingInfo, graphConsumer);
     MainDexInfo mainDexInfo = enqueuer.traceMainDex(executor, Timing.empty());
-    R8.processWhyAreYouKeepingAndCheckDiscarded(
+    CheckDiscardedSupport.processWhyAreYouKeepingAndCheckDiscarded(
         mainDexRootSet,
         () -> {
           ArrayList<DexProgramClass> classes = new ArrayList<>();

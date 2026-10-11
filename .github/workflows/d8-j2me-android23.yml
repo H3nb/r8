@@ -1,0 +1,49 @@
+name: D8-J2ME Android 6 feasibility
+
+on:
+  push:
+    branches:
+      - work/d8-j2me-bootstrap
+    paths:
+      - .github/workflows/d8-j2me-android23.yml
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        description: "Workflow run with a built d8-j2me-bootstrap artifact"
+        required: false
+        type: string
+        default: "38140355258"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  android23:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Fetch source-built compiler
+        uses: actions/download-artifact@v4
+        with:
+          name: d8-j2me-bootstrap
+          run-id: ${{ inputs.artifact_run_id || '38140355258' }}
+          github-token: ${{ github.token }}
+          path: build/libs
+      - name: Permit emulator hardware acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Android API 23 compiler execution
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 23
+          target: google_apis
+          arch: x86_64
+          ram-size: 2048M
+          heap-size: 512M
+          script: bash tools/j2me/android23_smoke.sh
