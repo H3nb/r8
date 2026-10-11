@@ -1,0 +1,51 @@
+# D8 programmatic conversion: byte[] class inputs, library providers,
+# indexed DEX outputs, and diagnostics. No CLI or java.nio.file API contract.
+-keep public class com.android.tools.r8.D8 {
+  public static void run(com.android.tools.r8.D8Command);
+}
+-keep public class com.android.tools.r8.D8Command {
+  public static com.android.tools.r8.D8Command$Builder builder();
+}
+-keep class com.android.tools.r8.D8Command$Builder {
+  public *** build();
+}
+-keep class com.android.tools.r8.BaseCommand$Builder {
+  public *** addClassProgramData(byte[], com.android.tools.r8.origin.Origin);
+  public *** addLibraryResourceProvider(com.android.tools.r8.ClassFileResourceProvider);
+}
+-keep class com.android.tools.r8.BaseCompilerCommand$Builder {
+  public *** setProgramConsumer(com.android.tools.r8.ProgramConsumer);
+  public *** setMinApiLevel(int);
+  public *** setMode(com.android.tools.r8.CompilationMode);
+}
+-keep interface com.android.tools.r8.ClassFileResourceProvider {
+  public java.util.Set getClassDescriptors();
+  public com.android.tools.r8.ProgramResource getProgramResource(java.lang.String);
+}
+-keep interface com.android.tools.r8.ProgramResource {
+  public static com.android.tools.r8.ProgramResource fromBytes(
+      com.android.tools.r8.origin.Origin, com.android.tools.r8.ProgramResource$Kind,
+      byte[], java.util.Set);
+}
+-keep enum com.android.tools.r8.ProgramResource$Kind { *; }
+-keep interface com.android.tools.r8.DexIndexedConsumer {
+  public void accept(int, com.android.tools.r8.ByteDataView, java.util.Set, com.android.tools.r8.DiagnosticsHandler);
+}
+-keep interface com.android.tools.r8.ProgramConsumer {
+  public void finished(com.android.tools.r8.DiagnosticsHandler);
+}
+-keep interface com.android.tools.r8.DiagnosticsHandler { *; }
+-keep class com.android.tools.r8.ByteDataView { public byte[] copyByteData(); }
+-keep class com.android.tools.r8.origin.Origin {
+  public static com.android.tools.r8.origin.Origin unknown();
+}
+-keep enum com.android.tools.r8.CompilationMode { *; }
+-keep public class com.android.tools.r8.Version {
+  public static final java.lang.String LABEL;
+}
+-keep class com.android.tools.r8.threading.providers.blocking.ThreadingModuleBlockingProvider {
+  public <init>();
+  public *;
+}
+-keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature,Exceptions
+-dontobfuscate

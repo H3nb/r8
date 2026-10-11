@@ -408,3 +408,13 @@ tasks.register<CreateR8LibraryTask>("assembleD8J2ME") {
   )
   setOutputJarFile(File(rootDir, "build/libs/d8-j2me.jar"))
 }
+
+tasks.register<CreateR8LibraryTask>("assembleD8J2MEApi") {
+  r8compilerClasspath.from(relocatedCompiler.flatMap { it.outputFile })
+  inputJar = d8InputJar.flatMap { it.archiveFile }
+  pgConfigs.from(
+    File(rootDir, "src/main/keep_d8_j2me_api.txt"),
+    File(rootDir, "src/main/dontwarn.txt"),
+  )
+  setOutputJarFile(File(rootDir, "build/libs/d8-j2me-api.jar"))
+}
