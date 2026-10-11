@@ -8,4 +8,10 @@
   public static final java.lang.String LABEL;
 }
 -keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature,Exceptions
+# The upstream threading module loader uses Class.forName, not a static
+# reference. Keep the default provider and its constructor exactly named.
+-keep class com.android.tools.r8.threading.providers.blocking.ThreadingModuleBlockingProvider {
+  public <init>();
+  public *;
+}
 -dontobfuscate
