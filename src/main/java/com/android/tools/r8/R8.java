@@ -1220,43 +1220,8 @@ public class R8 {
       Timing timing,
       ExecutorService executorService)
       throws ExecutionException {
-    if (whyAreYouKeepingConsumer != null) {
-      for (DexReference reference : rootSet.reasonAsked) {
-        whyAreYouKeepingConsumer.printWhyAreYouKeeping(
-            enqueuer.getGraphReporter().getGraphNode(reference), System.out);
-      }
-    }
-    DiscardedChecker discardedChecker =
-        forMainDex ? DiscardedChecker.createForMainDex(appView) : DiscardedChecker.create(appView);
-    List<ProgramDefinition> failed = discardedChecker.run(classes.get(), executorService);
-    if (appView.options().testing.dontReportFailingCheckDiscarded) {
-      assert !failed.isEmpty();
-      return;
-    }
-    if (failed.isEmpty()) {
-      return;
-    }
-    // If there is no kept-graph info, re-run the enqueueing to compute it.
-    if (whyAreYouKeepingConsumer == null) {
-      whyAreYouKeepingConsumer = new WhyAreYouKeepingConsumer(null);
-      ImmediateAppSubtypingInfo subtypingInfo = ImmediateAppSubtypingInfo.create(appView);
-      if (forMainDex) {
-        enqueuer =
-            EnqueuerFactory.createForFinalMainDexTracing(
-                appView, executorService, subtypingInfo, whyAreYouKeepingConsumer);
-        enqueuer.traceMainDex(executorService, timing);
-      } else {
-        enqueuer =
-            EnqueuerFactory.createForWhyAreYouKeeping(
-                appView, executorService, subtypingInfo, whyAreYouKeepingConsumer);
-        enqueuer.traceApplication(rootSet, executorService, timing);
-      }
-    }
-    options.reporter.error(
-        new CheckDiscardDiagnostic.Builder()
-            .addFailedItems(failed, enqueuer.getGraphReporter(), whyAreYouKeepingConsumer)
-            .build());
-    options.reporter.failIfPendingErrors();
+    CheckDiscardedSupport.processWhyAreYouKeepingAndCheckDiscarded(
+        rootSet, classes, whyAreYouKeepingConsumer, appView, enqueuer, forMainDex, options, timing, executorService);
   }
 
   private static void processCheckKotlinMetadataDiscarded(

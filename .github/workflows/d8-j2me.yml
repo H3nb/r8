@@ -8,6 +8,9 @@ on:
       - .github/workflows/d8-j2me.yml
       - d8_r8/dist/build.gradle.kts
       - src/main/keep_d8_j2me.txt
+      - src/main/java/com/android/tools/r8/CheckDiscardedSupport.java
+      - src/main/java/com/android/tools/r8/GenerateMainDexList.java
+      - src/main/java/com/android/tools/r8/R8.java
       - tools/j2me/verify_d8_j2me.py
   pull_request:
     branches:
@@ -16,6 +19,9 @@ on:
       - .github/workflows/d8-j2me.yml
       - d8_r8/dist/build.gradle.kts
       - src/main/keep_d8_j2me.txt
+      - src/main/java/com/android/tools/r8/CheckDiscardedSupport.java
+      - src/main/java/com/android/tools/r8/GenerateMainDexList.java
+      - src/main/java/com/android/tools/r8/R8.java
       - tools/j2me/verify_d8_j2me.py
   workflow_dispatch:
 
