@@ -46,26 +46,7 @@ jobs:
         run: |
           apk=tools/j2me/android-smoke/app/build/outputs/apk/debug/app-debug.apk
           stat -c 'APK bytes: %s' "$apk"
-          unzip -l "$apk" | grep -E 'classes([0-9]+)?\\.dex        run: |
-          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
-      - name: Run compiler inside an Android API 23 app
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 23
-          target: google_apis
-          arch: x86_64
-          ram-size: 2048M
-          heap-size: 512M
-          script: bash tools/j2me/android-smoke/run.sh
-      - name: Preserve Android log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: d8-android23-smoke-log
-          path: ${{ runner.temp }}/d8-j2me-android.log
-          if-no-files-found: ignore
-          retention-days: 7
- || true
+          unzip -l "$apk" | grep -E 'classes[0-9]*[.]dex' || true
       - name: Retain Android feasibility APK
         uses: actions/upload-artifact@v4
         with:
