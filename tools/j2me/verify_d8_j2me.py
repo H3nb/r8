@@ -84,11 +84,11 @@ def verify_conversion(compiler, root):
     )
     with ZipFile(output) as archive:
         names = archive.namelist()
-        dex_files = [name for name in names if re.fullmatch(r"classes[0-9]*\\.dex", name)]
+        dex_files = [name for name in names if re.fullmatch(r"classes[0-9]*\.dex", name)]
         if not dex_files:
             raise AssertionError(f"D8 emitted no DEX: {names}")
         dex = archive.read(dex_files[0])
-        if not dex.startswith(b"dex\\n"):
+        if not dex.startswith(b"dex\n"):
             raise AssertionError("Invalid DEX magic")
         for descriptor in (b"Lsample/Legacy;", b"Lsample/Modern;"):
             if descriptor not in dex:
