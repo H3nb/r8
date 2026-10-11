@@ -1,0 +1,11 @@
+# D8-J2ME bootstrap: keep only the CLI contract required by the first
+# source-built feasibility test. The programmatic conversion API will be
+# explicitly preserved and tested before integration into JL-Mod Plus.
+-keep public class com.android.tools.r8.D8 {
+  public static void main(java.lang.String[]);
+}
+-keep public class com.android.tools.r8.Version {
+  public static final java.lang.String LABEL;
+}
+-keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature,Exceptions
+-dontobfuscate

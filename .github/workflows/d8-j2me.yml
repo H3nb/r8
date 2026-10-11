@@ -1,0 +1,47 @@
+name: D8-J2ME bootstrap
+
+on:
+  push:
+    branches:
+      - work/d8-j2me-bootstrap
+    paths:
+      - .github/workflows/d8-j2me.yml
+      - d8_r8/dist/build.gradle.kts
+      - src/main/keep_d8_j2me.txt
+      - tools/j2me/verify_d8_j2me.py
+  pull_request:
+    branches:
+      - d8-j2me
+    paths:
+      - .github/workflows/d8-j2me.yml
+      - d8_r8/dist/build.gradle.kts
+      - src/main/keep_d8_j2me.txt
+      - tools/j2me/verify_d8_j2me.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Build slim D8 from source
+        run: python3 tools/gradle.py --no-internal -q :dist:assembleD8J2ME
+      - name: Validate legacy conversion and absence of R8 CLI
+        run: python3 tools/j2me/verify_d8_j2me.py build/libs/d8-j2me.jar
+      - name: Publish evaluation artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d8-j2me-bootstrap
+          path: |
+            build/libs/d8-j2me.jar
+            build/libs/d8-j2me.jar.map
+          retention-days: 7

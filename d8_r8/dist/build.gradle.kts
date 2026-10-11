@@ -384,3 +384,15 @@ tasks {
     setOutputJarFile(File(rootDir, "build/libs/processkeepruleslib.jar"))
   }
 }
+
+// D8-only bootstrap artifact. Keep the upstream compiler build intact while
+// shrinking away entry points and implementations exclusive to R8.
+tasks.register<CreateR8LibraryTask>("assembleD8J2ME") {
+  r8compilerClasspath.from(tasks.named<SwissArmyKnifeTask>("r8WithRelocatedDeps").flatMap { it.outputFile })
+  inputJar = tasks.named<SwissArmyKnifeTask>("r8WithRelocatedDeps").flatMap { it.outputFile }
+  pgConfigs.from(
+    File(rootDir, "src/main/keep_d8_j2me.txt"),
+    File(rootDir, "src/main/dontwarn.txt"),
+  )
+  setOutputJarFile(File(rootDir, "build/libs/d8-j2me.jar"))
+}
