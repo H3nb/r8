@@ -44,4 +44,6 @@ jobs:
           api-level: 23
           target: google_apis
           arch: x86_64
+          ram-size: 2048M
+          heap-size: 512M
           script: bash tools/j2me/android23_smoke.sh
